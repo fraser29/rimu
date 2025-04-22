@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Grid, Paper, Typography, TextField, Button, List, ListItem, ListItemButton, ListItemText, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, InputAdornment, Collapse, IconButton, ListItemSecondaryAction } from '@mui/material';
+import { Box, Grid, Paper, Typography, TextField, List, ListItem, ListItemButton, ListItemText, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, InputAdornment, Collapse, IconButton, ListItemSecondaryAction } from '@mui/material';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
@@ -12,7 +12,6 @@ import AddIcon from '@mui/icons-material/Add';
 import RefreshIcon from '@mui/icons-material/Refresh';
 
 function App() {
-  const [logFiles, setLogFiles] = useState([]);
   const [selectedFile, setSelectedFile] = useState(null);
   const [logContent, setLogContent] = useState([]);
   const [analytics, setAnalytics] = useState(null);
@@ -32,7 +31,6 @@ function App() {
     try {
       const response = await axios.get('http://localhost:5000/api/files');
       setWatchedFiles(response.data.files);
-      await fetchLogFiles();
     } catch (error) {
       console.error('Error fetching watched files:', error);
     }
@@ -61,19 +59,6 @@ function App() {
     }
   };
 
-  const fetchLogFiles = async () => {
-    try {
-      console.log('Fetching log files...');
-      const response = await axios.get('http://localhost:5000/api/logs');
-      console.log('Received log files:', response.data);
-      setLogFiles(response.data.log_files);
-    } catch (error) {
-      console.error('Error fetching log files:', error);
-      if (error.response) {
-        console.error('Backend error response:', error.response.data);
-      }
-    }
-  };
 
   const handleFileSelect = async (file) => {
     setSelectedFile(file);

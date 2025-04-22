@@ -27,9 +27,14 @@ else:
     watched_files = []
     rimu_log_file = None
 
-logging.basicConfig(level=logging.INFO,
-                    format='%(asctime)s | %(levelname)5s | %(message)s')
-logger = logging.getLogger(__name__)
+
+logger = logging.getLogger()
+logger.setLevel(logging.INFO)
+
+# Set up console handler
+console_handler = logging.StreamHandler()
+console_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)5s | %(message)s'))
+logger.addHandler(console_handler)
 if rimu_log_file:
     file_handler = logging.FileHandler(rimu_log_file)
     file_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)5s | %(message)s'))
@@ -118,11 +123,6 @@ def remove_file(file_path):
         return jsonify({"message": "File removed successfully"})
     logger.info(f"File not found: {file_path}")
     return jsonify({"error": "File not found"}), 404
-
-
-@app.route('/api/logs', methods=['GET'])
-def get_logs():
-    return jsonify({"log_files": get_watched_files()})
 
 
 @app.route('/api/logs/<path:log_path>', methods=['GET'])

@@ -5,6 +5,7 @@ import json
 import matplotlib
 matplotlib.use('Agg')  # Set the backend to Agg before importing pyplot
 import matplotlib.pyplot as plt
+import numpy as np
 import io
 import base64
 import logging
@@ -146,94 +147,82 @@ def get_log_content(log_path):
         return jsonify({"error": str(e)}), 500
 
 
-@app.route('/api/analytics/<path:log_path>', methods=['GET'])
-def get_analytics(log_path):
-    log_path = _checkFilePath(log_path)
+@app.route('/api/analytics', methods=['GET'])
+def get_analytics():
     try:
-        logger.debug(f"Generating analytics for (decoded): {log_path}")
-        
-        if not os.path.exists(log_path):
-            logger.error(f"File not found for analytics: {log_path}")
-            return jsonify({"error": "File not found"}), 404
-            
-        with open(log_path, 'r') as f:
-            lines = f.readlines()
-        
-        levels = {}
-        hours = []
-        log_levels = []
-        
-        for line in lines:
-            if not line.strip():
-                continue
-                
-            parts = line.split('|')
-            if len(parts) >= 3:
-                timestamp = parts[0].strip()
-                level = parts[1].strip()
-                
-                try:
-                    hour = timestamp.split()[1].split(':')[0]
-                    hours.append(hour)
-                except:
-                    continue
-                
-                if 'ERROR' in level:
-                    levels['ERROR'] = levels.get('ERROR', 0) + 1
-                    log_levels.append('ERROR')
-                elif 'WARN' in level:
-                    levels['WARN'] = levels.get('WARN', 0) + 1
-                    log_levels.append('WARN')
-                elif 'INFO' in level:
-                    levels['INFO'] = levels.get('INFO', 0) + 1
-                    log_levels.append('INFO')
-                elif 'DEBUG' in level:
-                    levels['DEBUG'] = levels.get('DEBUG', 0) + 1
-                    log_levels.append('DEBUG')
-                else:
-                    levels['OTHER'] = levels.get('OTHER', 0) + 1
-                    log_levels.append('OTHER')
-        
+        files = get_watched_files()
+        if not files:
+            return jsonify({"error": "No files being watched"}), 404
+
         plt.figure(figsize=(12, 6))
         
-        color_map = {
-            'ERROR': 'red',
-            'WARN': 'orange',
-            'INFO': 'blue',
-            'DEBUG': 'green',
-            'OTHER': 'gray'
-        }
+        # Colors for different files
+        colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
         
-        import random
-        y_values = [random.uniform(0, 1) for _ in range(len(hours))]
+        for idx, file_path in enumerate(files):
+            if not os.path.exists(file_path):
+                continue
+                
+            with open(file_path, 'r') as f:
+                lines = f.readlines()
+            
+            # Count entries per hour
+            hourly_counts = {}
+            for line in lines:
+                if not line.strip():
+                    continue
+                    
+                parts = line.split('|')
+                if len(parts) >= 3:
+                    try:
+                        timestamp = parts[0].strip()
+                        date_str, time_str = timestamp.split()
+                        hour = time_str.split(':')[0]
+                        key = f"{date_str} {hour}:00"
+                        hourly_counts[key] = hourly_counts.get(key, 0) + 1
+                    except:
+                        continue
+            
+            if not hourly_counts:
+                continue
+                
+            # Sort by datetime
+            sorted_times = sorted(hourly_counts.keys())
+            counts = [hourly_counts[time] for time in sorted_times]
+            
+            # Plot with smoothing
+            
+            # Convert times to numerical values for smoothing
+            x = np.arange(len(sorted_times))
+            y = counts
+            
+            # Plot the smooth curve
+            plt.plot(x, y, 
+                    label=os.path.basename(file_path),
+                    color=colors[idx % len(colors)],
+                    alpha=0.7,
+                    linewidth=2)
+            
+            # Add actual data points
+            plt.scatter(x, y, 
+                       color=colors[idx % len(colors)],
+                       alpha=0.5,
+                       s=30)
         
-        for level in set(log_levels):
-            indices = [i for i, lvl in enumerate(log_levels) if lvl == level]
-            plt.scatter(
-                [hours[i] for i in indices],
-                [y_values[i] for i in indices],
-                c=color_map[level],
-                label=level,
-                alpha=0.7,
-                s=50
-            )
+        plt.title('Log Entries per Hour', fontsize=24)
+        plt.xlabel('Time', fontsize=20)
+        plt.ylabel('Number of Entries', fontsize=20)
         
-        plt.title('Log Events by Hour', fontsize=24)
-        plt.xlabel('Hour of Day', fontsize=24)
+        # Set x-axis ticks to show every hour
+        plt.xticks(x, sorted_times, rotation=45, fontsize=12)
+        plt.yticks(fontsize=12)
         
-        all_hours = sorted(set(hours))
-        plt.xticks(all_hours, rotation=45, fontsize=20)
-        plt.yticks([])
-        
-        plt.grid(True, alpha=0.3, axis='both', which='major')
-        ax = plt.gca()
-        ax.spines['top'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        
-        plt.legend(fontsize=24)
+        # Add grid and legend
+        plt.grid(True, alpha=0.3)
+        plt.legend(fontsize=12)
         plt.tight_layout()
         
+        # Convert plot to base64
         buf = io.BytesIO()
         plt.savefig(buf, format='png', dpi=100, bbox_inches='tight')
         buf.seek(0)
@@ -241,7 +230,6 @@ def get_analytics(log_path):
         plt.close()
         
         return jsonify({
-            "levels": levels,
             "plot": plot_data
         })
     except Exception as e:

@@ -74,8 +74,8 @@ function App() {
       const response = await axios.get(`http://localhost:5000/api/logs${encodedPath}`);
       setLogContent(response.data.lines);
       
-      console.log('Fetching analytics...');
-      const analyticsResponse = await axios.get(`http://localhost:5000/api/analytics${encodedPath}`);
+      // Fetch combined analytics
+      const analyticsResponse = await axios.get('http://localhost:5000/api/analytics');
       setAnalytics(analyticsResponse.data);
     } catch (error) {
       console.error('Error fetching file content:', error);
@@ -339,34 +339,12 @@ function App() {
                   <AnalyticsIcon sx={{ verticalAlign: 'middle', mr: 1 }} />
                   Analytics
                 </Typography>
-                {analytics && (
-                  <>
-                    <Typography variant="subtitle1" gutterBottom>
-                      Log Level Distribution
-                    </Typography>
-                    <BarChart
-                      width={300}
-                      height={200}
-                      data={Object.entries(analytics.levels).map(([level, count]) => ({
-                        level,
-                        count
-                      }))}
-                    >
-                      <CartesianGrid strokeDasharray="3 3" />
-                      <XAxis dataKey="level" />
-                      <YAxis />
-                      <Tooltip />
-                      <Legend />
-                      <Bar dataKey="count" fill="#8884d8" />
-                    </BarChart>
-                    {analytics.plot && (
-                      <img 
-                        src={`data:image/png;base64,${analytics.plot}`} 
-                        alt="Log Level Distribution" 
-                        style={{ width: '100%', marginTop: '1rem' }}
-                      />
-                    )}
-                  </>
+                {analytics && analytics.plot && (
+                  <img 
+                    src={`data:image/png;base64,${analytics.plot}`} 
+                    alt="Log Entries per Hour" 
+                    style={{ width: '100%', marginTop: '1rem' }}
+                  />
                 )}
               </Box>
             </Collapse>

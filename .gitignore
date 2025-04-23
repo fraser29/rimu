@@ -211,3 +211,4 @@ node_modules/
 
 # Project specific
 rimu_config_watching.json
+rimu_config.json

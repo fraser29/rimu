@@ -14,6 +14,7 @@ import logging
 # Configuration file path
 this_dir = os.path.dirname(os.path.abspath(__file__))
 CONFIG_FILE = os.path.join(this_dir, 'rimu_config.json')
+CONFIG_FILE_WATCHING = os.path.join(this_dir, 'rimu_config_watching.json')
 # ======================================================================================
 
 # ======================================================================================
@@ -22,10 +23,8 @@ CONFIG_FILE = os.path.join(this_dir, 'rimu_config.json')
 if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
-        watched_files = config.get('watched_files', [])
         rimu_log_file = config.get('rimu_log_file', None)
 else:
-    watched_files = []
     rimu_log_file = None
 
 
@@ -52,9 +51,9 @@ CORS(app)
 # ======================================================================================
 # Load and save config
 # ======================================================================================
-def load_config():
+def load_config(config_file):
     try:
-        with open(CONFIG_FILE, 'r') as f:
+        with open(config_file, 'r') as f:
             config = json.load(f)
             return config
     except Exception as e:
@@ -62,15 +61,15 @@ def load_config():
         return {}
     
 def get_watched_files():
-    config = load_config()
+    config = load_config(CONFIG_FILE_WATCHING)
     return config.get('watched_files', [])  
     
 
 def save_config(files):
-    config = load_config()
+    config = load_config(CONFIG_FILE_WATCHING)
     config['watched_files'] = files
     try:
-        with open(CONFIG_FILE, 'w') as f:
+        with open(CONFIG_FILE_WATCHING, 'w') as f:
             json.dump(config, f, indent=4)
     except Exception as e:
         logger.error(f"Error saving config: {str(e)}")
@@ -108,8 +107,6 @@ def add_file():
         save_config(files)
     
     return jsonify({"message": "File added successfully"})
-
-
 
 
 @app.route('/api/files/delete/<path:file_path>', methods=['GET'])

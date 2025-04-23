@@ -13,6 +13,25 @@ A simple lightweight web-based dashboard for viewing and analyzing log files.
 
 ## Setup
 
+### Backend Setup
+
+1. Install Python dependencies:
+```bash
+pip install -r requirements.txt
+```
+
+### Frontend Setup
+
+1. Navigate to the frontend directory:
+```bash
+cd frontend
+```
+
+2. Install dependencies:
+```bash
+npm install
+```
+
 ### Start the backend and frontend
 
 A single script is provided for convenience to start the backend and frontend. Have python environment activated and run:
@@ -29,47 +48,33 @@ To stop the services:
 - If processes don't terminate within 5 seconds, it will force kill them
 - You'll see status messages about what's happening during shutdown
 
-### Backend Setup
+### Start frontend and backend independently
 
-1. Install Python dependencies:
-```bash
-pip install -r requirements.txt
-```
-
-2. Start the Flask server:
+1. Start the Flask server:
 ```bash
 python app.py
 ```
 
-The backend will run on http://localhost:5000
+The backend will run on http://localhost:5000 by default.
 
-### Frontend Setup
-
-1. Navigate to the frontend directory:
+2. Start the development server:
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
-npm install
-```
-
-3. Start the development server:
-```bash
 npm start
 ```
 
-The frontend will run on http://localhost:3000
+The frontend will run on http://localhost:3000 by default.
 
 ## Usage
 
-1. Open the application in your web browser
-2. Use the file selector in the left panel to add log files
+1. Open the application in your web browser at http://localhost:3000
+2. Use the input field in the left panel to add log files (copy and paste full path to the log file)
 3. Click on a log file to view its contents
 4. Use the filter box to search through logs
 5. View analytics and visualizations in the right panel
 
 ## Configuration
 
-Log file paths are stored in `rimu_config.json`. This file is automatically created and updated when you add new log files through the interface.
+Log file paths are stored in `rimu_config_watching.json`. This file is automatically created and updated when you add new log files through the interface.
+
+The main log file is stored in `rimu_config.json`. Create this file and set entry "rimu_log_file" to the path of the log file you want to use as the main log file. 

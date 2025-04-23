@@ -207,3 +207,7 @@ node_modules/
 *.swp
 *.swo
 .DS_Store
+
+
+# Project specific
+rimu_config_watching.json

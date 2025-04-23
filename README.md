@@ -1,6 +1,6 @@
 # RIMU - Log Viewer Dashboard
 
-A simple lightweight web-based dashboard for viewing and analyzing log files.
+A simple lightweight web-based dashboard for viewing and analyzing *local* log files.
 
 ## Features
 

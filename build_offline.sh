@@ -5,15 +5,18 @@ mkdir -p rimu_offline
 cd rimu_offline
 
 # Create and activate Python virtual environment
-python3 -m venv venv
-source venv/bin/activate
+# DON'T NEED THIS - WANT TO BUILD THIS LOCALLY - JUST NPM BUILD
+# python3 -m venv venv
+# source venv/bin/activate
 
 # Install Python dependencies
-pip install -r ../requirements.txt
+# pip install -r ../requirements.txt
 
 # Copy Python files
 cp ../app.py .
-cp ../rimu_config_watching.json .
+cp ../rimu_config_watching-EXAMPLE.json .
+cp ../rimu_config.json .
+cp ../start.sh .
 
 # Build frontend
 cd ../frontend
@@ -22,6 +25,8 @@ npm run build
 
 # Copy frontend build to rimu_offline
 cp -r build ../rimu_offline/frontend
+
+
 
 # Create a README with instructions
 cat > ../rimu_offline/README.md << EOL
@@ -53,6 +58,6 @@ The frontend is already built and ready to serve. The built files are in the \`f
 EOL
 
 # Create a requirements.txt in the offline build
-pip freeze > ../rimu_offline/requirements.txt
+# pip freeze > ../rimu_offline/requirements.txt
 
 echo "Build completed! The rimu_offline directory contains everything needed to run the application offline." 

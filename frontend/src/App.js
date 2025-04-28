@@ -16,7 +16,7 @@ function App() {
   const [analytics, setAnalytics] = useState(null);
   const [filter, setFilter] = useState('');
   const [orderBy, setOrderBy] = useState('time');
-  const [order, setOrder] = useState('asc');
+  const [order, setOrder] = useState('desc');
   const [leftPanelOpen, setLeftPanelOpen] = useState(true);
   const [rightPanelOpen, setRightPanelOpen] = useState(true);
   const [watchedFiles, setWatchedFiles] = useState([]);

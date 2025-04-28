@@ -9,6 +9,7 @@ import numpy as np
 import io
 import base64
 import logging
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # ======================================================================================
 # Configuration file path
@@ -24,29 +25,41 @@ if os.path.exists(CONFIG_FILE):
     with open(CONFIG_FILE, 'r') as f:
         config = json.load(f)
         rimu_log_file = config.get('rimu_log_file', None)
+        LOG_LEVEL = config.get('LOG_LEVEL', 'INFO')
 else:
     rimu_log_file = None
 
+# Create a custom filter to exclude /api/logs from Flask's access logs
+class LogFilter(logging.Filter):
+    def filter(self, record):
+        return not ('GET /api/logs' in record.getMessage())
 
 logger = logging.getLogger()
-logger.setLevel(logging.INFO)
+logger.setLevel(LOG_LEVEL)
 
 # Set up console handler
 console_handler = logging.StreamHandler()
 console_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)5s | %(message)s'))
+console_handler.addFilter(LogFilter())  # Add the filter to console handler
 logger.addHandler(console_handler)
+logger.info(f"Logging to console")
+
 if rimu_log_file:
     file_handler = logging.FileHandler(rimu_log_file)
     file_handler.setFormatter(logging.Formatter('%(asctime)s | %(levelname)5s | %(message)s'))
+    file_handler.addFilter(LogFilter())  # Add the filter to file handler
     logger.addHandler(file_handler)
-    logger.info(f"RIMU log file: {rimu_log_file}")
-# ======================================================================================
+    logger.info(f"Logging to RIMU log file: {rimu_log_file}")
 
 # ======================================================================================
 # Flask app
 # ======================================================================================
 app = Flask(__name__)
 CORS(app)
+
+# Disable Flask's default logging
+app.logger.disabled = True
+logging.getLogger('werkzeug').disabled = True
 
 # ======================================================================================
 # Load and save config
@@ -60,8 +73,10 @@ def load_config(config_file):
         logger.error(f"Error loading config: {str(e)}")
         return {}
     
-def get_watched_files():
+def get_watched_files(LOG=True):
     config = load_config(CONFIG_FILE_WATCHING)
+    if LOG or LOG_LEVEL == 'DEBUG':
+        logger.info(f"Loaded config from {CONFIG_FILE_WATCHING} ({len(config.get('watched_files', []))} log files being watched)")
     return config.get('watched_files', [])  
     
 
@@ -71,6 +86,7 @@ def save_config(files):
     try:
         with open(CONFIG_FILE_WATCHING, 'w') as f:
             json.dump(config, f, indent=4)
+        logger.info(f"Saved config to {CONFIG_FILE_WATCHING} ({len(files)} log files being watched)")
     except Exception as e:
         logger.error(f"Error saving config: {str(e)}")
 
@@ -95,17 +111,19 @@ def get_files():
 def add_file():
     data = request.json
     if 'file' not in data:
-        return jsonify({"error": "File path is required"}), 400
+        # don't actually get here - caught at web level
+        return jsonify({"error": "File path is required - paste into input box"}), 400
     
     file_path = _checkFilePath(data['file'])
     if not os.path.isfile(file_path):
+        logger.error(f"File does not exist: {file_path}")
         return jsonify({"error": "File does not exist"}), 400
     
     files = get_watched_files()
     if file_path not in files:
         files.append(file_path)
         save_config(files)
-    
+        logger.info(f"File added successfully: {file_path}")
     return jsonify({"message": "File added successfully"})
 
 
@@ -136,8 +154,12 @@ def get_log_content(log_path):
             for line in f:
                 if line.strip():
                     parts = line.split('|')
-                    if len(parts) >= 3:
+                    if len(parts) == 3:
+                        # timestamp, level, message
                         lines.append([parts[0].strip(), parts[1].strip(), parts[2].strip()])
+                    elif len(parts) == 4:
+                        # timestamp, level, source, message - Skip the source for now. 
+                        lines.append([parts[0].strip(), parts[1].strip(), parts[3].strip()])
             return jsonify({"lines": lines})
     except Exception as e:
         logger.error(f"Error reading log file: {str(e)}")
@@ -147,7 +169,7 @@ def get_log_content(log_path):
 @app.route('/api/analytics', methods=['GET'])
 def get_analytics():
     try:
-        files = get_watched_files()
+        files = get_watched_files(LOG=False)
         if not files:
             return jsonify({"error": "No files being watched"}), 404
 

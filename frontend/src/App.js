@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { Box, Grid, Paper, Typography, TextField, List, ListItem, ListItemButton, ListItemText, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, TableSortLabel, InputAdornment, Collapse, IconButton, ListItemSecondaryAction } from '@mui/material';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend } from 'recharts';
 import axios from 'axios';
 import SearchIcon from '@mui/icons-material/Search';
 import ChevronLeftIcon from '@mui/icons-material/ChevronLeft';
@@ -27,6 +26,27 @@ function App() {
     fetchWatchedFiles();
   }, []);
 
+  useEffect(() => {
+    let intervalId;
+    
+    if (selectedFile) {
+      // Initial refresh
+      handleRefresh();
+      
+      // Set up interval for auto-refresh
+      intervalId = setInterval(() => {
+        handleRefresh();
+      }, 10000); // 10 seconds
+    }
+
+    // Cleanup interval on unmount or when selectedFile changes
+    return () => {
+      if (intervalId) {
+        clearInterval(intervalId);
+      }
+    };
+  }, [selectedFile]); // Only re-run effect when selectedFile changes
+
   const fetchWatchedFiles = async () => {
     try {
       const response = await axios.get('http://localhost:5000/api/files');
@@ -46,7 +66,11 @@ function App() {
       setNewFile('');
       await fetchWatchedFiles();
     } catch (error) {
-      console.error('Error adding file:', error);
+      if (error.response && error.response.data && error.response.data.error) {
+        alert(error.response.data.error);
+      } else {
+        console.error('Error adding file:', error);
+      }
     }
   };
 

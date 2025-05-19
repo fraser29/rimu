@@ -74,14 +74,14 @@ function App() {
     }
   };
 
-  const handleRemoveFile = async (filePath) => {
-    try {
-      await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/files/delete/${encodeURIComponent(filePath)}`);
-      await fetchWatchedFiles();
-    } catch (error) {
-      console.error('Error removing file:', error);
-    }
-  };
+  // const handleRemoveFile = async (filePath) => {
+  //   try {
+  //     await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/files/delete/${encodeURIComponent(filePath)}`);
+  //     await fetchWatchedFiles();
+  //   } catch (error) {
+  //     console.error('Error removing file:', error);
+  //   }
+  // };
 
 
   const handleFileSelect = async (file) => {
@@ -196,7 +196,7 @@ function App() {
                     <AddIcon />
                   </IconButton>
                 </Box>
-                <List>
+                {/* <List>   THIS IS LIST FOR DELETEING - DON'T WANT THIS FOR NOW
                   {watchedFiles.map((filePath, index) => (
                     <ListItem 
                       key={index}
@@ -218,7 +218,7 @@ function App() {
                       </ListItemSecondaryAction>
                     </ListItem>
                   ))}
-                </List>
+                </List> */}
                 <Typography variant="subtitle1" sx={{ mt: 2, mb: 1 }}>
                   Available Log Files
                 </Typography>

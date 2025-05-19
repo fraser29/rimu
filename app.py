@@ -152,6 +152,28 @@ def convert_time_to_ISO(timestamp_str: str) -> str:
         logger.error(f"Error converting time to ISO: {str(e)}")
         return None
 
+def _findDelimiter(line):
+    if line.count(' | ') in [2,3]:
+        return ' | '
+    elif line.count(' - ') in [2,3]:
+        return ' - '
+    elif line.count(' : ') in [2,3]:
+        return ' : '
+    elif line.count('|') in [2,3]:
+        return '|'
+    elif line.count('-') in [2,3]:
+        return '-'
+    elif line.count(':') in [2,3]:
+        return ':'
+    return None
+
+def _findLevelColumn(line_parts):
+    for k1, part in enumerate(line_parts):
+        if part.strip() in ['INFO', 'DEBUG', 'WARNING', 'ERROR', 'CRITICAL']:
+            return k1
+    return None
+
+
 @app.route('/api/logs/<path:log_path>', methods=['GET'])
 def get_log_content(log_path):
     log_path = _checkFilePath(log_path)
@@ -159,18 +181,25 @@ def get_log_content(log_path):
         logger.debug(f"Getting log content for (decoded): {log_path}")
         if not os.path.exists(log_path):
             return jsonify({"error": "File not found"}), 404
-            
+        
+        delimiter, level_column = None, None
         with open(log_path, 'r') as f:
             lines = []
             for line in f:
                 if line.strip():
-                    parts = line.split('|')
+                    if delimiter is None:
+                        delimiter = _findDelimiter(line)
+                    if delimiter is None:
+                        logger.error(f"No delimiter found for line: {line}")
+                        raise Exception(f"No delimiter found for log file: {log_path}")
+                    parts = line.split(delimiter)
+                    level_column = _findLevelColumn(parts)
                     if len(parts) == 3:
                         # timestamp, level, message
-                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[1].strip(), parts[2].strip()])
+                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[level_column].strip(), parts[2].strip()])
                     elif len(parts) == 4:
                         # timestamp, level, source, message - Skip the source for now. 
-                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[1].strip(), parts[3].strip()])
+                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[level_column].strip(), parts[3].strip()])
             return jsonify({"lines": lines})
     except Exception as e:
         logger.error(f"Error reading log file: {str(e)}")

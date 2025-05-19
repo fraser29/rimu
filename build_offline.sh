@@ -15,8 +15,8 @@ cd rimu_offline
 # Copy Python files
 cp ../app.py .
 cp ../rimu_config_watching-EXAMPLE.json .
-cp ../rimu_config.json .
-cp ../start.sh .
+cp ../rimu_config-EXAMPLE.json .
+cp ../start*.sh .
 
 # Build frontend
 cd ../frontend
@@ -51,6 +51,8 @@ cat > ../rimu_offline/README.md << EOL
 
 ## Frontend
 The frontend is already built and ready to serve. The built files are in the \`frontend\` directory.
+Copy to e.g: /var/www/html/rimu
+
 
 ## Running the Application
 1. Start the backend server

@@ -1,6 +1,12 @@
 {
     "watched_files": [
-        "/path/to/log_file_1.log",
-        "/path/to/log_file_2.log"
+        {
+            "short_name": "log_file_1",
+            "full_path": "/path/to/log_file_1.log"
+        },
+        {
+            "short_name": "log_file_2",
+            "full_path": "/path/to/log_file_2.log"
+        }
     ]
 }

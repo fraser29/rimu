@@ -78,8 +78,7 @@ def get_watched_files(LOG=True):
     config = load_config(CONFIG_FILE_WATCHING)
     if LOG or LOG_LEVEL == 'DEBUG':
         logger.info(f"Loaded config from {CONFIG_FILE_WATCHING} ({len(config.get('watched_files', []))} log files being watched)")
-    return config.get('watched_files', [])  
-    
+    return config.get('watched_files', [])
 
 def save_config(files):
     config = load_config(CONFIG_FILE_WATCHING)
@@ -99,6 +98,9 @@ def _checkFilePath(file_path):
         return os.path.sep + file_path
     return file_path
 
+def _get_short_name(file_path):
+    # Get the filename without extension
+    return os.path.splitext(os.path.basename(file_path))[0]
 
 # ======================================================================================
 # API endpoints
@@ -106,7 +108,6 @@ def _checkFilePath(file_path):
 @app.route('/api/files', methods=['GET'])
 def get_files():
     return jsonify({"files": get_watched_files()})
-
 
 @app.route('/api/files', methods=['POST'])
 def add_file():
@@ -121,26 +122,25 @@ def add_file():
         return jsonify({"error": "File does not exist"}), 400
     
     files = get_watched_files()
-    if file_path not in files:
-        files.append(file_path)
+    # Check if file already exists in the list
+    if not any(f['full_path'] == file_path for f in files):
+        files.append({
+            'short_name': _get_short_name(file_path),
+            'full_path': file_path
+        })
         save_config(files)
         logger.info(f"File added successfully: {file_path}")
     return jsonify({"message": "File added successfully"})
-
 
 @app.route('/api/files/delete/<path:file_path>', methods=['GET'])
 def remove_file(file_path):
     file_path = _checkFilePath(file_path)
     logger.info(f"Removing file: {file_path}")
     files = get_watched_files()
-    if file_path in files:
-        files.remove(file_path)
-        save_config(files)
-        logger.info(f"File removed successfully: {file_path}")
-        return jsonify({"message": "File removed successfully"})
-    logger.info(f"File not found: {file_path}")
-    return jsonify({"error": "File not found"}), 404
-
+    files = [f for f in files if f['full_path'] != file_path]
+    save_config(files)
+    logger.info(f"File removed successfully: {file_path}")
+    return jsonify({"message": "File removed successfully"})
 
 def convert_time_to_ISO(timestamp_str: str) -> str:
     # Convert timestamp to ISO format
@@ -151,7 +151,6 @@ def convert_time_to_ISO(timestamp_str: str) -> str:
     except ValueError as e:
         logger.error(f"Error converting time to ISO: {str(e)}")
         return None
-
 
 @app.route('/api/logs/<path:log_path>', methods=['GET'])
 def get_log_content(log_path):
@@ -177,7 +176,6 @@ def get_log_content(log_path):
         logger.error(f"Error reading log file: {str(e)}")
         return jsonify({"error": str(e)}), 500
 
-
 @app.route('/api/analytics', methods=['GET'])
 def get_analytics():
     try:
@@ -190,7 +188,8 @@ def get_analytics():
         # Colors for different files
         colors = ['#1f77b4', '#ff7f0e', '#2ca02c', '#d62728', '#9467bd', '#8c564b', '#e377c2', '#7f7f7f', '#bcbd22', '#17becf']
         
-        for idx, file_path in enumerate(files):
+        for idx, file_path_dict in enumerate(files):
+            file_path = file_path_dict['full_path']
             if not os.path.exists(file_path):
                 continue
                 

@@ -85,8 +85,8 @@ function App() {
 
 
   const handleFileSelect = async (file) => {
-    setSelectedFile(file);
-    await refreshFileContent(file);
+    setSelectedFile(file.full_path);
+    await refreshFileContent(file.full_path);
   };
 
   const refreshFileContent = async (file) => {
@@ -227,13 +227,13 @@ function App() {
                     <ListItemButton 
                       key={index}
                       sx={{
-                        backgroundColor: selectedFile === file ? 'action.selected' : 'inherit'
+                        backgroundColor: selectedFile === file.full_path ? 'action.selected' : 'inherit'
                       }}
                       onClick={() => handleFileSelect(file)}
                     >
                       <ListItemText 
-                                    primary={file.split('/').pop()}
-                                    secondary={file}
+                        primary={file.short_name}
+                        // secondary={file.full_path}
                       />
                     </ListItemButton>
                   ))}

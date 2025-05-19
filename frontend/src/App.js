@@ -49,7 +49,7 @@ function App() {
 
   const fetchWatchedFiles = async () => {
     try {
-      const response = await axios.get('http://localhost:5000/api/files');
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/files`);
       setWatchedFiles(response.data.files);
     } catch (error) {
       console.error('Error fetching watched files:', error);
@@ -60,7 +60,7 @@ function App() {
     if (!newFile.trim()) return;
     
     try {
-      await axios.post('http://localhost:5000/api/files', { 
+      await axios.post(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/files`, { 
         file: newFile.trim() 
       });
       setNewFile('');
@@ -76,7 +76,7 @@ function App() {
 
   const handleRemoveFile = async (filePath) => {
     try {
-      await axios.get(`http://localhost:5000/api/files/delete/${encodeURIComponent(filePath)}`);
+      await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/files/delete/${encodeURIComponent(filePath)}`);
       await fetchWatchedFiles();
     } catch (error) {
       console.error('Error removing file:', error);
@@ -95,11 +95,12 @@ function App() {
         ? '/' + file.slice(1).split('/').map(segment => encodeURIComponent(segment)).join('/')
         : file.split('/').map(segment => encodeURIComponent(segment)).join('/');
       
-      const response = await axios.get(`http://localhost:5000/api/logs${encodedPath}`);
+      const response = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/logs${encodedPath}`);
+      console.log('Sample log entry:', response.data.lines[0]); // Debug log format
       setLogContent(response.data.lines);
       
       // Fetch combined analytics
-      const analyticsResponse = await axios.get('http://localhost:5000/api/analytics');
+      const analyticsResponse = await axios.get(`${process.env.REACT_APP_API_URL || 'http://localhost:5000'}/api/analytics`);
       setAnalytics(analyticsResponse.data);
     } catch (error) {
       console.error('Error fetching file content:', error);
@@ -144,13 +145,18 @@ function App() {
 
     console.debug('Filtered results:', filtered);
     return filtered.sort((a, b) => {
-      const aValue = a[orderBy === 'time' ? 0 : orderBy === 'level' ? 1 : 2];
-      const bValue = b[orderBy === 'time' ? 0 : orderBy === 'level' ? 1 : 2];
-      
-      if (order === 'asc') {
-        return aValue.localeCompare(bValue);
+      if (orderBy === 'time') {
+        // Convert ISO strings to Date objects for comparison
+        const dateA = new Date(a[0]);
+        const dateB = new Date(b[0]);
+        return order === 'asc' ? dateA - dateB : dateB - dateA;
       } else {
-        return bValue.localeCompare(aValue);
+        // For non-time columns, use string comparison
+        const aValue = a[orderBy === 'level' ? 1 : 2];
+        const bValue = b[orderBy === 'level' ? 1 : 2];
+        return order === 'asc' 
+          ? aValue.localeCompare(bValue)
+          : bValue.localeCompare(aValue);
       }
     });
   };

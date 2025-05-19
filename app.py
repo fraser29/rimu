@@ -9,7 +9,7 @@ import numpy as np
 import io
 import base64
 import logging
-from werkzeug.middleware.proxy_fix import ProxyFix
+from dateutil.parser import parse
 
 # ======================================================================================
 # Configuration file path
@@ -141,6 +141,17 @@ def remove_file(file_path):
     return jsonify({"error": "File not found"}), 404
 
 
+def convert_time_to_ISO(timestamp_str: str) -> str:
+    # Convert timestamp to ISO format
+    # Example: 2025-05-19 12:00:00 -> 2025-05-19T12:00:00Z
+    try:
+        timestamp = parse(timestamp_str, fuzzy=True)
+        return timestamp.isoformat() + 'Z'
+    except ValueError as e:
+        logger.error(f"Error converting time to ISO: {str(e)}")
+        return None
+
+
 @app.route('/api/logs/<path:log_path>', methods=['GET'])
 def get_log_content(log_path):
     log_path = _checkFilePath(log_path)
@@ -156,10 +167,10 @@ def get_log_content(log_path):
                     parts = line.split('|')
                     if len(parts) == 3:
                         # timestamp, level, message
-                        lines.append([parts[0].strip(), parts[1].strip(), parts[2].strip()])
+                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[1].strip(), parts[2].strip()])
                     elif len(parts) == 4:
                         # timestamp, level, source, message - Skip the source for now. 
-                        lines.append([parts[0].strip(), parts[1].strip(), parts[3].strip()])
+                        lines.append([convert_time_to_ISO(parts[0].strip()), parts[1].strip(), parts[3].strip()])
             return jsonify({"lines": lines})
     except Exception as e:
         logger.error(f"Error reading log file: {str(e)}")
@@ -194,9 +205,11 @@ def get_analytics():
                 parts = line.split('|')
                 if len(parts) >= 3:
                     try:
-                        timestamp = parts[0].strip()
-                        date_str, time_str = timestamp.split()
-                        hour = time_str.split(':')[0]
+                        timestamp = parse(parts[0].strip(), fuzzy=True)
+                        if timestamp is None:
+                            continue
+                        date_str = timestamp.strftime("%Y%m%d")
+                        hour = timestamp.hour
                         key = f"{date_str} {hour}:00"
                         hourly_counts[key] = hourly_counts.get(key, 0) + 1
                     except:

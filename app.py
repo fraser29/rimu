@@ -28,6 +28,7 @@ if os.path.exists(CONFIG_FILE):
         LOG_LEVEL = config.get('LOG_LEVEL', 'INFO')
 else:
     rimu_log_file = None
+    LOG_LEVEL = 'INFO'
 
 # Create a custom filter to exclude /api/logs from Flask's access logs
 class LogFilter(logging.Filter):

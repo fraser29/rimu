@@ -10,7 +10,7 @@ import io
 import base64
 import logging
 from dateutil.parser import parse
-
+import datetime
 # ======================================================================================
 # Configuration file path
 this_dir = os.path.dirname(os.path.abspath(__file__))
@@ -221,29 +221,22 @@ def get_analytics():
             file_path = file_path_dict['full_path']
             if not os.path.exists(file_path):
                 continue
-                
-            with open(file_path, 'r') as f:
-                lines = f.readlines()
+
+            log_content = get_log_content(file_path)
+            if log_content.status_code != 200:
+                continue
+            lines = log_content.json['lines']
             
             # Count entries per hour
             hourly_counts = {}
             for line in lines:
-                if not line.strip():
-                    continue
-                    
-                parts = line.split('|')
-                if len(parts) >= 3:
-                    try:
-                        timestamp = parse(parts[0].strip(), fuzzy=True)
-                        if timestamp is None:
-                            continue
-                        date_str = timestamp.strftime("%Y%m%d")
-                        hour = timestamp.hour
-                        key = f"{date_str} {hour}:00"
-                        hourly_counts[key] = hourly_counts.get(key, 0) + 1
-                    except:
-                        continue
-            
+                # Each line is time(iso), level, message
+                timestamp = datetime.datetime.fromisoformat(line[0])
+                date_str = timestamp.strftime("%Y%m%d")
+                hour = timestamp.hour
+                key = f"{date_str} {hour}:00"
+                hourly_counts[key] = hourly_counts.get(key, 0) + 1
+
             if not hourly_counts:
                 continue
                 

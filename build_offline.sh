@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # Create a directory for the offline build
+rm -rf rimu_offline
 mkdir -p rimu_offline
 cd rimu_offline
 
@@ -26,7 +27,8 @@ npm run build
 # Copy frontend build to rimu_offline
 cp -r build ../rimu_offline/frontend
 
-
+# Replace all occurrences of http://localhost:5000 with empty string in the built frontend files
+find ../rimu_offline/frontend -type f -exec sed -i 's|http://localhost:5000||g' {} +
 
 # Create a README with instructions
 cat > ../rimu_offline/README.md << EOL

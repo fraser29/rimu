@@ -231,7 +231,7 @@ def get_analytics():
             hourly_counts = {}
             for line in lines:
                 # Each line is time(iso), level, message
-                timestamp = datetime.datetime.fromisoformat(line[0])
+                timestamp = datetime.datetime.fromisoformat(line[0][:-1])
                 date_str = timestamp.strftime("%Y%m%d")
                 hour = timestamp.hour
                 key = f"{date_str} {hour}:00"
@@ -252,7 +252,7 @@ def get_analytics():
             
             # Plot the smooth curve
             plt.plot(x, y, 
-                    label=os.path.basename(file_path),
+                    label=file_path_dict['short_name'],
                     color=colors[idx % len(colors)],
                     alpha=0.7,
                     linewidth=2)
